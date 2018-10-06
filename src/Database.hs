@@ -10,7 +10,7 @@ import Prelude hiding (id)
 import Data.Text (pack)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad (when)
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, listToMaybe)
 import Data.Map.Strict (fromList)
 import qualified Data.Map.Strict as M
 
@@ -80,7 +80,7 @@ putReaction react = queryP_ que params
         que = "CREATE (R:Reaction {id: {rid}, name: {name}});"
         params = fromList [
             ("rid", I $ (id :: Reaction -> Int) react),
-            ("name", T .pack  $ (name :: Reaction-> String) react)]
+            ("name", T . pack  $ (name :: Reaction-> String) react)]
 
 putMolecule :: Molecule -> BoltActionT IO ()
 putMolecule mol = queryP_ que params
@@ -107,30 +107,21 @@ putCatalyst cat =
 getReaction :: Int -> BoltActionT IO (Maybe Reaction)
 getReaction id = do
         resp <- queryP "MATCH (R:Reaction {id: {rid}}) RETURN R;" params
-        if null resp 
-            then return Nothing
-            else
-                mapM exact $ M.lookup "R" $ head resp
+        mapM exact $ (M.lookup "R") =<< listToMaybe resp
     where
         params = fromList [("rid",I id)]
 
 getCatalyst :: Int -> BoltActionT IO (Maybe Catalyst)
 getCatalyst id = do
         resp <- queryP "MATCH (C:Catalyst {id: {cid}}) RETURN C;" params
-        if null resp 
-            then return Nothing
-            else
-                mapM exact $ M.lookup "C" $ head resp
+        mapM exact $ (M.lookup "C") =<< listToMaybe resp
     where
         params = fromList [("cid",I id)]
 
 getMolecule :: Int -> BoltActionT IO (Maybe Molecule)
 getMolecule id = do
         resp <- queryP "MATCH (M:Molecule {id: {mid}}) RETURN M;" params
-        if null resp 
-            then return Nothing
-            else
-                mapM exact $ M.lookup "M" $ head resp
+        mapM exact $ (M.lookup "M") =<< listToMaybe resp
     where
         params = fromList [("mid",I id)]
 
@@ -138,30 +129,21 @@ getMolecule id = do
 getReagentRel :: Reaction -> Molecule -> BoltActionT IO (Maybe REAGENT_IN)
 getReagentRel react mol = do
         resp <- queryP "MATCH (M:Molecule {id: {mid}})-[r:REAGENT_IN]-> (R:Reaction {id: {rid}}) RETURN r;" params
-        if null resp 
-            then return Nothing
-            else
-                mapM exact $ M.lookup "r" $ head resp
+        mapM exact $ (M.lookup "r") =<< listToMaybe resp
     where
         params = fromList [("mid", I $ (id :: Molecule -> Int) mol), ("rid", I $ (id :: Reaction -> Int) react)]
 
 getProductRel :: Reaction -> Molecule -> BoltActionT IO (Maybe PRODUCT_FROM)
 getProductRel react mol = do
         resp <- queryP "MATCH (M:Molecule {id: {mid}})<-[r:PRODUCT_FROM]-(R:Reaction {id: {rid}}) RETURN r;" params
-        if null resp 
-            then return Nothing
-            else
-                mapM exact $ M.lookup "r" $ head resp
+        mapM exact $ (M.lookup "r") =<< listToMaybe resp
     where
         params = fromList [("mid", I $ (id :: Molecule -> Int) mol), ("rid", I $ (id :: Reaction -> Int) react)]
 
 getAccelerateRel :: Reaction -> Catalyst -> BoltActionT IO (Maybe PRODUCT_FROM)
 getAccelerateRel react cat = do
         resp <- queryP "MATCH (C:Catalyst {id: {cid}})-[r:ACCELERATE]->(R:Reaction {id: {rid}}) RETURN r;" params
-        if null resp 
-            then return Nothing
-            else
-                mapM exact $ M.lookup "r" $ head resp
+        mapM exact $ (M.lookup "r") =<< listToMaybe resp
     where
         params = fromList [("cid", I $ (id :: Catalyst -> Int) cat), ("rid", I $ (id :: Reaction -> Int) react)]
 
@@ -171,10 +153,7 @@ getAccelerateRel react cat = do
 findPath :: Molecule -> Molecule -> BoltActionT IO (Maybe Path)
 findPath m1 m2 = do
         recs <- queryP que params
-        if null recs
-            then return Nothing
-            else
-                exact =<< head recs `at` "p"
+        mapM exact $ (`at` "p") =<< listToMaybe recs
     where
         que = "MATCH (M1:Molecule {id: {id1}}), (M2:Molecule {id: {id2}}), " <>
             "p = shortestPath((M1)-[*]->(M2)) RETURN p;"

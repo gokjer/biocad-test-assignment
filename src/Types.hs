@@ -53,9 +53,6 @@ instance RecordValue Catalyst where
         do
             id <- exact =<< props `at` "id"
             smiles <- (return . unpack) =<< exact =<< props `at` "smiles"
-            -- name <- return $ do
-            --     mbName <- M.lookup "name" props
-            --     (Just . unpack) =<< exact mbName
             name <- (fmap . fmap) unpack $ mapM exact $ M.lookup "name" props
             return Catalyst {id=id, smiles=smiles, name= name}
     exact x = fail $ show x ++ " is not a Catalyst"
