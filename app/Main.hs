@@ -38,9 +38,11 @@ config = defaultConfig {user = "neo4j", password = "password"}
 
 main :: IO ()
 main = do
+    putStrLn "Enter random seed:"
+    seed <- fmap read getLine
     bracket (connect config) close $ \pipe -> run pipe $ do
         dropBase
-        fillBase
+        fillBase seed
         nodes <- allNodes
         mapM_ (liftIO . print) nodes
         rels <- allRelations
