@@ -1,10 +1,10 @@
-name:                biocad
+name:                biocad-test-assignment
 version:             0.1.0.0
-github:              "githubuser/biocad"
+github:              "gokjer/biocad-test-assignment"
 license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2018 Author name here"
+author:              "Evgeny Varganov"
+maintainer:          "gokjer@gmail.com"
+copyright:           "2018 Evgeny Varganov"
 
 extra-source-files:
 - README.md
