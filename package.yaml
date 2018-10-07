@@ -25,6 +25,7 @@ dependencies:
 - text
 - containers
 - random
+- mtl
 
 library:
   source-dirs: src
@@ -38,7 +39,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - biocad
+    - biocad-test-assignment
 
 tests:
   biocad-test:
@@ -49,4 +50,4 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - biocad
+    - biocad-test-assignment

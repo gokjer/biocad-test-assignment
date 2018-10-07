@@ -4,6 +4,8 @@
 
 module Database.Fill (fillBase) where
 
+import Control.Monad (mapM)
+import Control.Monad.State.Lazy (State, state, evalState)
 import System.Random (randoms, mkStdGen)
 
 import Database.Bolt (BoltActionT)
@@ -90,21 +92,23 @@ defaultMolecule = Molecule {id=(-1), smiles="DEFAULT", iupacName="Default Molecu
 defaultCatalyst :: Catalyst
 defaultCatalyst = Catalyst {id=(-1), smiles="DEFAULT", name=Nothing}
 
-genReaction :: Int -> [Int] -> BoltActionT IO [Int]
-genReaction id rands =
+
+useRand :: Int -> (Int -> a) -> State [Int] [a]
+useRand n f = state $ \st ->
+    let (hd, tl) = splitAt n st in
+    (map f hd, tl)
+
+genReaction :: Int -> State [Int] (BoltActionT IO ())
+genReaction id = do
     let react = Reaction {id=id, name="Fake Reaction #" ++ show id}
-        (reag_r, rest1) = splitAt 3 rands
-        reags = map (\m -> (m, REAGENT_IN {amount=1})) $
-            map (pick defaultMolecule mols . \x-> x `mod` molsCount) reag_r
-        (prod_r, rest2) = splitAt 2 rest1
-        prods = map (\m -> (m, PRODUCT_FROM {amount=1})) $
-            map (pick defaultMolecule mols . \x-> x `mod` molsCount) prod_r
-        (cat_r, rest3) = splitAt 2 rest2
-        rcats = map (\c -> (c, ACCELERATE {temperature=16, pressure=100})) $
-            map (pick defaultCatalyst cats . \x-> x `mod` catsCount) cat_r
-    in do
-        addReaction react rcats reags prods
-        return rest3
+    reags <- useRand 3 $ (\m -> (m, REAGENT_IN {amount=1})) .
+        pick defaultMolecule mols . \x-> x `mod` molsCount
+    prods <- useRand 2 $ (\m -> (m, PRODUCT_FROM {amount=1})) .
+        pick defaultMolecule mols . \x-> x `mod` molsCount
+    rcats <- useRand 2 $
+        (\c -> (c, ACCELERATE {temperature=16, pressure=100})) .
+        pick defaultCatalyst cats . \x-> x `mod` catsCount
+    return $ addReaction react rcats reags prods
 
 
 fillBase :: Int -> BoltActionT IO ()
@@ -112,5 +116,6 @@ fillBase seed = do
     addReaction react_ap cats_ap reags_ap prods_ap
     addReaction react_p cats_p reags_p prods_p
     let rands = randoms $ mkStdGen seed
-    _ <- foldl (>>=) (return rands) $ map genReaction [3..reactionCount]
+    _ <- sequence $ flip evalState rands $
+        mapM genReaction [3..reactionCount]
     return ()

@@ -64,4 +64,4 @@ packages:
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
 ghc-options:
-  biocad: -Wall -Wcompat -fwarn-redundant-constraints -fno-warn-name-shadowing
+  biocad-test-assignment: -Wall -Wcompat -fwarn-redundant-constraints -fno-warn-name-shadowing

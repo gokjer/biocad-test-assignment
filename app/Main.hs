@@ -4,10 +4,6 @@
 
 module Main where
 
--- import Data.List
--- import Data.Text (Text)
--- import Control.Monad (forM_)
-
 import Control.Monad.IO.Class (liftIO)
 
 import Control.Exception (bracket)
